@@ -1,0 +1,18 @@
+# Global variables to avoid R CMD check NOTEs
+utils::globalVariables(c(
+  "Name",
+  "Score", 
+  "Year",
+  "cpia_year",
+  "display_name",
+  "economy",
+  "group",
+  "income_group",
+  "line_size",
+  "line_type",
+  "region",
+  "score",
+  "year",
+  "year_factor",
+  "comparator_category"
+))
