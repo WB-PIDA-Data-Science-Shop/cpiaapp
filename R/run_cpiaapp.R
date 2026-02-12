@@ -2,6 +2,10 @@
 #'
 #' Launches an interactive Shiny dashboard for CPIA data visualization and analysis.
 #'
+#' @param standard_data Standard CPIA dataset (default: cpiaetl::standard_cpia)
+#' @param africaii_data African Integrity Indicators CPIA dataset (default: cpiaetl::africaii_cpia)
+#' @param group_standard_data Standard group averages dataset (default: cpiaetl::group_standard_cpia)
+#' @param group_africaii_data African Integrity Indicators group averages dataset (default: cpiaetl::group_africaii_cpia)
 #' @param ... Additional arguments passed to \code{\link[shiny]{shinyApp}}.
 #'
 #' @return A Shiny app object.
@@ -15,7 +19,19 @@
 #' @importFrom bslib page_navbar bs_theme bs_add_rules nav_panel nav_spacer nav_menu nav_item navbar_options font_google
 #' @importFrom thematic thematic_shiny
 #' @export
-run_cpiaapp <- function(...) {
+run_cpiaapp <- function(standard_data = cpiaetl::standard_cpia,
+                        africaii_data = cpiaetl::africaii_cpia,
+                        group_standard_data = cpiaetl::group_standard_cpia,
+                        group_africaii_data = cpiaetl::group_africaii_cpia,
+                        ...) {
+  
+  # Validate required datasets
+  validate_datasets(
+    standard_data = standard_data,
+    africaii_data = africaii_data,
+    group_standard_data = group_standard_data,
+    group_africaii_data = group_africaii_data
+  )
 
   # add path to visual assets (image and css)
   shiny::addResourcePath("assets", system.file("www", package = "cpiaapp"))
@@ -92,7 +108,11 @@ run_cpiaapp <- function(...) {
   )
 
   server <- function(input, output, session){
-    viz_server("viz")
+    viz_server("viz", 
+               standard_data = standard_data,
+               africaii_data = africaii_data,
+               group_standard_data = group_standard_data,
+               group_africaii_data = group_africaii_data)
   }
 
   shiny::shinyApp(ui, server, ...)

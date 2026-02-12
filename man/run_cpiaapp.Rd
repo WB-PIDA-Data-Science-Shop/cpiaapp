@@ -4,9 +4,23 @@
 \alias{run_cpiaapp}
 \title{Run the CPIA Shiny Application}
 \usage{
-run_cpiaapp(...)
+run_cpiaapp(
+  standard_data = cpiaetl::standard_cpia,
+  africaii_data = cpiaetl::africaii_cpia,
+  group_standard_data = cpiaetl::group_standard_cpia,
+  group_africaii_data = cpiaetl::group_africaii_cpia,
+  ...
+)
 }
 \arguments{
+\item{standard_data}{Standard CPIA dataset (default: cpiaetl::standard_cpia)}
+
+\item{africaii_data}{African Integrity Indicators CPIA dataset (default: cpiaetl::africaii_cpia)}
+
+\item{group_standard_data}{Standard group averages dataset (default: cpiaetl::group_standard_cpia)}
+
+\item{group_africaii_data}{African Integrity Indicators group averages dataset (default: cpiaetl::group_africaii_cpia)}
+
 \item{...}{Additional arguments passed to \code{\link[shiny]{shinyApp}}.}
 }
 \value{

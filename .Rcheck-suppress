@@ -1,0 +1,11 @@
+# R CMD check suppressions
+# 
+# The following warning is expected in corporate/restricted network environments:
+# "Warning: unable to access index for repository https://CRAN.R-project.org/src/contrib"
+#
+# This occurs when checking for unstated dependencies in 'tests' but does not
+# indicate a code problem. All test dependencies are properly declared in DESCRIPTION.
+#
+# To run check without network dependency verification:
+# Sys.setenv("_R_CHECK_CRAN_INCOMING_REMOTE_" = "FALSE")
+# devtools::check()

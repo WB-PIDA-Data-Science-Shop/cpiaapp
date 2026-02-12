@@ -18,6 +18,9 @@ Imports:
     ggplot2,
     plotly,
     DT,
-    rlang
-Suggests:
+    tibble,
     cpiaetl
+Suggests:
+    testthat (>= 3.0.0),
+    shinytest2
+Config/testthat/edition: 3
