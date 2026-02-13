@@ -5,6 +5,7 @@
 ^app\.R$
 ^copilot_logs$
 ^wiki$
+^cpiaapp\.wiki$
 ^\.prompts$
 ^\.github$
 ^\.Rcheck-suppress$
