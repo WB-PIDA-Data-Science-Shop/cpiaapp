@@ -4,3 +4,7 @@
 ^\.Rproj\.user$
 ^app\.R$
 ^copilot_logs$
+^wiki$
+^\.prompts$
+^\.github$
+^\.Rcheck-suppress$
