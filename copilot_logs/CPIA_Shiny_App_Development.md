@@ -852,7 +852,181 @@ The cpiaapp refactoring project successfully achieved all primary objectives: im
 
 ---
 
+## Update: 2026-02-14 17:40:00
+
+### Progress Summary
+
+Implemented data source transparency feature with interactive info icon and modal, allowing users to see which publicly available datasets and indicators contribute to each CPIA subquestion's score. Fixed question availability issues (q13a and q13c excluded due to missing data) and resolved all R CMD check warnings. Package remains production-ready with 134 passing tests.
+
+**Key Accomplishments:**
+- ✅ Added info icon (ℹ️) next to question selector with modal showing data sources and indicators
+- ✅ Integrated real metadata from `cpiaetl::metadata_cpia` showing actual indicators, descriptions, and sources
+- ✅ Fixed question filtering to only show 11 available questions (excludes q13a, q13c which have no data)
+- ✅ Resolved all R CMD check warnings (chromote dependency, rsconnect directory, undefined globals)
+- ✅ Updated 3 failing tests to reflect correct question count (11 vs 13)
+- ✅ All 134 tests passing, R CMD check clean
+
+### Challenges Encountered
+
+**1. Question Availability Mismatch:**
+- **Issue:** `cpia_defns.csv` contained q13a and q13c, but these questions had no data in `cpiaetl::metadata_cpia` or actual CPIA datasets
+- **Impact:** Users could select questions that would immediately error: "Question 'q13a' not found in data"
+- **Solution:** Modified `get_cpia_questions()` to filter against available questions in `metadata_cpia` before returning choices
+
+**2. Indicator Table Not Rendering in Modal:**
+- **Issue:** Initially used `DT::datatable()` inside modal, but table appeared blank
+- **Root Cause:** DT widgets don't always render properly inside Shiny modals (timing/initialization issue)
+- **Solution:** Replaced with simple Bootstrap HTML table using `shiny::tags$table()` with scrollable container
+
+**3. Deprecated dplyr Function Warning:**
+- **Issue:** `cur_data()` deprecated in dplyr 1.1.0, causing warnings in `get_question_data_sources()`
+- **Solution:** Replaced with modern `pick()` function for selecting columns within `summarize()`
+
+**4. R CMD Check Warnings:**
+- **Issue 1:** "Non-standard file/directory found at top level: 'rsconnect'" (deployment folder)
+- **Issue 2:** "no visible binding for global variable: question_code" (NSE in dplyr)
+- **Solutions:** Added `^rsconnect$` to .Rbuildignore; used `.data$question_code` pronoun for proper tidy evaluation
+
+### Changes to Plan
+
+**Original Scope:** Focus on code refactoring and validation.
+
+**Extended Scope:** Added user-facing documentation transparency feature not in original plan:
+- Info icon with modal showing data sources
+- Integration with `cpiaetl::metadata_cpia` for real-time indicator information
+- Link to comprehensive RPubs methodology documentation (https://rpubs.com/ifeanyi588/cpiascoringmethod)
+
+**Rationale:** User published methodology documentation and needed way to expose data source information within the app for transparency and user understanding.
+
+### Technical Details
+
+**New Functions Created:**
+
+1. **`get_question_data_sources()`** (utils_metadata.R)
+   ```r
+   # Returns tibble with: variable, indicator_info (nested tibble), sources, n_indicators
+   # Aggregates from cpiaetl::metadata_cpia
+   # Uses pick() for column selection (modern dplyr)
+   ```
+
+2. **`create_question_info_icon()`** (utils_ui.R)
+   ```r
+   # Creates info icon button with tooltip
+   # Styled with Bootstrap info color, transparent background
+   # Returns actionButton with circle-info icon
+   ```
+
+3. **`create_question_info_modal()`** (utils_ui.R)
+   ```r
+   # Creates large modal with:
+   #   - Question code and label as title
+   #   - Summary badge (e.g., "3 indicators from 2 data sources")
+   #   - Bulleted list of unique data sources
+   #   - Scrollable HTML table with: Indicator | Description | Source
+   #   - Link to full RPubs documentation
+   ```
+
+**Modified Functions:**
+
+1. **`get_cpia_questions()`** (utils_metadata.R)
+   - Now filters `cpia_defns.csv` against `cpiaetl::metadata_cpia$variable`
+   - Only returns questions with actual data available
+   - Returns 11 questions instead of 13 (excludes q13a, q13c)
+   - Uses `.data$question_code` for NSE safety
+
+2. **viz_ui.R**
+   - Added info icon next to question selector using flexbox layout
+   - Icon positioned with `margin-top: 25px` to align with input label
+
+3. **viz_server.R**
+   - Added `observeEvent(input$question_info)` to show modal
+   - Retrieves question metadata and data sources
+   - Handles fallback case if source info unavailable
+
+**Data Structure:**
+
+```r
+# cpiaetl::metadata_cpia structure (80 rows):
+# - indicator: "wjp_rol_6_6", "property_rights", etc.
+# - variable: "q12a", "q12b", etc. (question codes)
+# - source: "CLIAR", "Heritage Index of Economic Freedom", etc.
+# - var_description_short: Short description of what indicator measures
+
+# get_question_data_sources() output:
+# variable | indicator_info (tibble) | sources (list) | n_indicators
+# q12a     | <tibble [3 × 3]>        | <chr [2]>      | 3
+#          | (indicator, var_description_short, source)
+```
+
+### Next Steps
+
+**Immediate:**
+- User acceptance testing with `run_cpiaapp()` to verify info icon works correctly for all 11 questions
+- Deploy to Posit Connect with updated features
+- Verify RPubs documentation link is accessible to end users
+
+**Documentation:**
+- Update GitHub Wiki with info icon feature
+- Document the 11 vs 13 question discrepancy (q13a, q13c excluded due to no data)
+- Consider adding inline comment in code explaining question filtering logic
+
+**Future Enhancements:**
+- Add tests for `get_question_data_sources()` function
+- Test modal rendering with questions that have many vs. few indicators
+- Consider adding methodology summary directly in modal (backup if RPubs link becomes inaccessible)
+
+---
+
+## To-Do List
+
+### Testing & Validation
+- [ ] Test validation error messages - Verify clear, actionable error messages appear for missing columns, invalid questions
+- [ ] Test edge cases with real data - Empty datasets, non-existent country selections, all-NA question columns
+- [ ] Verify table displays all columns correctly with multiple comparators selected
+- [ ] Test data switching between Standard and African Integrity Indicators datasets
+- [ ] Test info icon modal with all 11 questions to verify indicator tables display correctly
+- [ ] Test info modal with questions that have many indicators (e.g., q16d)
+- [ ] Test info modal with questions that have few indicators (e.g., q12a)
+- [ ] Add test for `get_question_data_sources()` function
+
+### Code Quality
+- [ ] Consider medium-priority edge case tests - Selected country not in data, all scores are NA, special characters in names, case sensitivity
+- [ ] Review validation messages for user-friendliness - Ensure error messages are clear for end users (not just developers)
+- [ ] Consider extracting question availability check into a reusable helper function
+- [ ] Review if `get_cpia_questions()` logic could be simplified (currently reads CSV then filters)
+
+### Performance & Optimization
+- [ ] Performance benchmarking (before/after refactoring comparison)
+- [ ] Profile memory usage with large comparator selections
+
+### Documentation
+- [ ] Update package README with new architecture overview (including validation)
+- [ ] Document validation requirements - Add section explaining required dataset structure (columns, question format)
+- [ ] Document helper function relationships in a vignette
+- [ ] Add examples to function documentation for key helpers
+- [ ] Update GitHub Wiki with info icon feature documentation
+- [ ] Document why q13a and q13c are excluded from the app (no data in cpiaetl::metadata_cpia)
+- [ ] Add comment in code explaining the 11 vs 13 question discrepancy
+- [ ] Verify RPubs documentation link (https://rpubs.com/ifeanyi588/cpiascoringmethod) is accessible to end users
+- [ ] Consider adding methodology summary directly in the modal (if RPubs link becomes inaccessible)
+
+### Deployment
+- [ ] Commit all refactored code including validation enhancements to git
+- [ ] Tag release version after successful testing
+- [ ] Update deployment configuration if needed
+- [ ] Create deployment guide for Posit Connect at w0lxdrconn01.worldbank.org
+
+### Enhancement Opportunities (Lower Priority)
+- [ ] Evaluate if additional edge cases need test coverage
+- [ ] Enable shinytest2 integration tests on non-restricted environments
+- [ ] Add performance monitoring/logging in production
+- [ ] Consider extracting reusable components into separate package
+- [ ] Consider adding warning log message if cpia_defns.csv has questions not in metadata_cpia
+
+---
+
 *Report generated: 2026-02-12*  
-*Task duration: Multiple sessions across February 12, 2026*  
+*Last updated: 2026-02-14 17:40:00*  
+*Task duration: Multiple sessions across February 12-14, 2026*  
 *Final test count: 134 passing tests*  
 *Final code quality: R CMD check clean (0 errors, 0 notes)*
