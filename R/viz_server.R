@@ -6,7 +6,7 @@
 #' @param group_standard_data Standard group averages dataset (default: cpiaetl::group_standard_cpia)
 #' @param group_africaii_data African Integrity Indicators group averages dataset (default: cpiaetl::group_africaii_cpia)
 #'
-#' @importFrom shiny moduleServer reactive observeEvent updateSelectInput req
+#' @importFrom shiny moduleServer reactive observeEvent updateSelectInput req showModal modalDialog modalButton
 #' @importFrom plotly renderPlotly
 #' @importFrom DT renderDT
 #'
@@ -26,6 +26,48 @@ viz_server <- function(id,
   )
   
   shiny::moduleServer(id, function(input, output, session) {
+    
+    # Show question info modal when info icon is clicked
+    shiny::observeEvent(input$question_info, {
+      # Get data sources for current question
+      sources <- get_question_data_sources()
+      questions <- get_governance_questions()
+      
+      # Find matching question info
+      question_info <- questions[questions$question_code == input$question, ]
+      source_info <- sources[sources$variable == input$question, ]
+      
+      # Show modal with question information
+      if (nrow(source_info) > 0 && nrow(question_info) > 0) {
+        shiny::showModal(
+          create_question_info_modal(
+            question_code = input$question,
+            question_label = question_info$question_label,
+            indicator_info = source_info$indicator_info[[1]],
+            sources = source_info$sources[[1]],
+            n_indicators = source_info$n_indicators
+          )
+        )
+      } else {
+        # Fallback if data sources not found
+        shiny::showModal(
+          shiny::modalDialog(
+            title = "Question Information",
+            shiny::p("Data source information is not available for this question."),
+            shiny::p(
+              "For complete methodology documentation, see: ",
+              shiny::a(
+                "CPIA Scoring Methodology",
+                href = "https://rpubs.com/ifeanyi588/cpiascoringmethod",
+                target = "_blank"
+              )
+            ),
+            easyClose = TRUE,
+            footer = shiny::modalButton("Close")
+          )
+        )
+      }
+    })
     
     # Get the dataset based on user selection
     get_data <- shiny::reactive({

@@ -1,30 +1,33 @@
 #' Get CPIA Question Metadata
 #'
 #' Loads and formats CPIA question metadata from the cpiaetl package. This function
-#' reads the canonical cpia_defns.csv file which contains question codes, labels,
-#' and categorizations. Currently returns governance questions (Q12-Q16) with 13
-#' subquestions: q12a, q12b, q13a, q13b, q13c, q14a, q14b, q14c, q15a, q15b, q16a,
-#' q16b, q16c, q16d.
+#' uses the metadata_cpia dataset which contains question codes, labels, and data
+#' source information. Only returns questions that have actual data available in
+#' the CPIA datasets.
 #'
 #' @return A tibble with columns:
 #'   - question_code: Question identifier (e.g., "q12a", "q12b")
 #'   - question_label: Full question text
 #'   - category: Always "Governance" for current questions
-#'   - subcategory: Question group (e.g., "Q12", "Q13", "Q14", "Q15", "Q16")
+#'   - subcategory: Question group (e.g., "Q12", "Q13", "Q15", "Q16")
 #'   
 #' @examples
 #' \dontrun{
 #' questions <- get_cpia_questions()
-#' # Returns 13 governance questions
+#' # Returns governance questions with available data
 #' governance <- questions[questions$category == "Governance", ]
 #' }
 #'
 #' @importFrom tibble tibble
+#' @importFrom dplyr distinct arrange .data
 #' @importFrom utils read.csv
 #'
 #' @keywords internal
 get_cpia_questions <- function() {
-  # Locate the CPIA definitions file in the installed cpiaetl package
+  # Get metadata from cpiaetl which only includes questions with data
+  metadata <- cpiaetl::metadata_cpia
+  
+  # Get unique questions with their labels from cpia_defns
   cpia_defns_path <- system.file("extdata", "cpia_defns.csv", package = "cpiaetl")
   
   # Fail fast if cpiaetl not installed or file missing
@@ -35,17 +38,25 @@ get_cpia_questions <- function() {
   # Read the CSV file with question metadata
   cpia_defns <- read.csv(cpia_defns_path, stringsAsFactors = FALSE)
   
+  # Get unique questions from metadata (only those with data)
+  available_questions <- unique(metadata$variable)
+  
+  # Filter cpia_defns to only include questions with data
+  cpia_defns <- cpia_defns[cpia_defns$variable %in% available_questions, ]
+  
   # Extract subcategory from question code (e.g., "q12a" -> "Q12")
-  # This groups related questions together (e.g., Q12a, Q12b are both Q12 subcategory)
   subcategory <- toupper(gsub("([a-z]+)([0-9]+).*", "Q\\2", cpia_defns$variable))
   
   # Return standardized tibble format
-  tibble::tibble(
+  result <- tibble::tibble(
     question_code = cpia_defns$variable,      # e.g., "q12a"
     question_label = cpia_defns$subquestion,  # Full text description
     category = "Governance",                  # All current questions are governance
     subcategory = subcategory                 # e.g., "Q12"
   )
+  
+  # Arrange by question code for consistent ordering
+  dplyr::arrange(result, .data$question_code)
 }
 
 #' Get Governance CPIA Questions
@@ -53,10 +64,11 @@ get_cpia_questions <- function() {
 #' Convenience wrapper that filters CPIA questions to return only governance-related
 #' questions (Q12-Q16). Since all current questions in cpiaetl are governance questions,
 #' this currently returns the same result as get_cpia_questions(), but provides future
-#' flexibility if non-governance questions are added.
+#' flexibility if non-governance questions are added. Only includes questions with
+#' available data.
 #'
-#' @return A tibble with governance questions only. Currently returns all 13 questions:
-#'   q12a, q12b, q13a, q13b, q13c, q14a, q14b, q14c, q15a, q15b, q16a, q16b, q16c, q16d.
+#' @return A tibble with governance questions only. Currently returns all questions
+#'   with available data: q12a, q12b, q12c, q13b, q15a, q15b, q15c, q16a, q16b, q16c, q16d.
 #'   Same structure as get_cpia_questions().
 #'   
 #' @examples
@@ -137,4 +149,45 @@ format_question_choices <- function(questions_df, include_question_code = TRUE) 
   choices <- setNames(questions_df$question_code, labels)
   
   choices
+}
+
+#' Get Data Sources for CPIA Questions
+#'
+#' Loads mapping of CPIA questions to their underlying data sources from cpiaetl.
+#' This provides transparency about which publicly available datasets and indicators
+#' contribute to each question's estimated score.
+#'
+#' @return A tibble with columns:
+#'   - question_code: Question identifier (e.g., "q12a")
+#'   - indicator_info: List of tibbles with indicator, description, and source
+#'   - sources: Character vector of unique data sources for this question
+#'   - n_indicators: Number of indicators used
+#'   
+#' @examples
+#' \dontrun{
+#' sources <- get_question_data_sources()
+#' # Get sources for specific question
+#' q12a_sources <- sources[sources$question_code == "q12a", ]
+#' }
+#'
+#' @importFrom tibble tibble
+#' @importFrom dplyr group_by summarize n select
+#'
+#' @keywords internal
+get_question_data_sources <- function() {
+  # Get metadata from cpiaetl package
+  metadata <- cpiaetl::metadata_cpia
+  
+  # Group by question and aggregate indicators with descriptions and sources
+  metadata |>
+    dplyr::group_by(variable) |>
+    dplyr::summarize(
+      indicator_info = list(
+        dplyr::pick(indicator, var_description_short, source)
+      ),
+      sources = list(unique(source)),
+      n_indicators = dplyr::n(),
+      .groups = "drop"
+    ) |>
+    tibble::tibble()
 }

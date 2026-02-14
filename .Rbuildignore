@@ -9,3 +9,4 @@
 ^\.prompts$
 ^\.github$
 ^\.Rcheck-suppress$
+^rsconnect$

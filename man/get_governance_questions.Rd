@@ -7,15 +7,16 @@
 get_governance_questions()
 }
 \value{
-A tibble with governance questions only. Currently returns all 13 questions:
-q12a, q12b, q13a, q13b, q13c, q14a, q14b, q14c, q15a, q15b, q16a, q16b, q16c, q16d.
+A tibble with governance questions only. Currently returns all questions
+with available data: q12a, q12b, q12c, q13b, q15a, q15b, q15c, q16a, q16b, q16c, q16d.
 Same structure as get_cpia_questions().
 }
 \description{
 Convenience wrapper that filters CPIA questions to return only governance-related
 questions (Q12-Q16). Since all current questions in cpiaetl are governance questions,
 this currently returns the same result as get_cpia_questions(), but provides future
-flexibility if non-governance questions are added.
+flexibility if non-governance questions are added. Only includes questions with
+available data.
 }
 \examples{
 \dontrun{

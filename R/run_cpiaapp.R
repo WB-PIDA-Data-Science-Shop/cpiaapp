@@ -93,7 +93,7 @@ run_cpiaapp <- function(standard_data = cpiaetl::standard_cpia,
       bslib::nav_item(
         shiny::tags$a(
           "CPIA Dashboard",
-          href = "https://github.com/YOUR-ORG/cpiaapp",
+          href = "https://github.com/WB-PIDA-Data-Science-Shop/cpiaapp",
           target = "_blank"
         )
       ),

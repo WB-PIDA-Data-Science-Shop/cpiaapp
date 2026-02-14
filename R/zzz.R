@@ -14,5 +14,8 @@ utils::globalVariables(c(
   "score",
   "year",
   "year_factor",
-  "comparator_category"
+  "comparator_category",
+  "indicator",
+  "var_description_short",
+  "variable"
 ))

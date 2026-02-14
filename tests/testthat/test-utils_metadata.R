@@ -8,16 +8,20 @@ test_that("get_cpia_questions returns correct structure", {
   # Check required columns exist
   expect_true(all(c("question_code", "question_label", "category", "subcategory") %in% names(questions)))
   
-  # Check we have 13 governance questions (as defined in cpiaetl)
-  expect_equal(nrow(questions), 13)
+  # Check we have 11 governance questions with available data (excludes q13a, q13c)
+  expect_equal(nrow(questions), 11)
   
   # Check all are governance category
   expect_true(all(questions$category == "Governance"))
   
   # Check some expected question codes exist
   expect_true("q12a" %in% questions$question_code)
-  expect_true("q13a" %in% questions$question_code)
+  expect_true("q13b" %in% questions$question_code)
   expect_true("q16d" %in% questions$question_code)
+  
+  # Check that questions without data are excluded
+  expect_false("q13a" %in% questions$question_code)
+  expect_false("q13c" %in% questions$question_code)
   
   # Check subcategories are properly extracted
   expect_true(all(questions$subcategory %in% c("Q12", "Q13", "Q15", "Q16")))
@@ -26,18 +30,19 @@ test_that("get_cpia_questions returns correct structure", {
 test_that("get_governance_questions filters correctly", {
   gov_questions <- get_governance_questions()
   
-  # Should return all governance questions (currently all 13 questions in cpiaetl are governance)
+  # Should return all governance questions with available data (11 questions)
   all_questions <- get_cpia_questions()
   
-  expect_equal(nrow(gov_questions), 13)
+  expect_equal(nrow(gov_questions), 11)
   expect_equal(nrow(gov_questions), nrow(all_questions))
   
   # All should be governance category
   expect_true(all(gov_questions$category == "Governance"))
   
-  # Check expected governance question codes
-  expected_codes <- c("q12a", "q12b", "q12c", "q13a", "q13b", "q13c", "q15a", "q15b", "q15c", "q16a", "q16b", "q16c", "q16d")
+  # Check expected governance question codes (excludes q13a and q13c which have no data)
+  expected_codes <- c("q12a", "q12b", "q12c", "q13b", "q15a", "q15b", "q15c", "q16a", "q16b", "q16c", "q16d")
   expect_true(all(gov_questions$question_code %in% expected_codes))
+  expect_equal(length(gov_questions$question_code), length(expected_codes))
 })
 
 test_that("format_question_choices creates named vector with codes", {

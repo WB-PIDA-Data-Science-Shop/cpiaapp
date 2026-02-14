@@ -2,7 +2,7 @@
 #'
 #' @param id Module namespace ID
 #'
-#' @importFrom shiny NS selectInput checkboxInput tagList h4 p hr
+#' @importFrom shiny NS selectInput checkboxInput tagList h4 p hr actionButton icon
 #' @importFrom bslib card card_header card_body layout_sidebar sidebar
 #' @importFrom plotly plotlyOutput
 #' @importFrom DT DTOutput
@@ -17,12 +17,22 @@ viz_ui <- function(id) {
       
       shiny::h4("Data Selection"),
       
-      # Question selector - dynamically generated from metadata
-      shiny::selectInput(
-        ns("question"),
-        "CPIA Criterion:",
-        choices = format_question_choices(get_governance_questions()),
-        selected = "q12b"
+      # Question selector with info icon
+      shiny::tags$div(
+        style = "display: flex; align-items: center; gap: 5px;",
+        shiny::tags$div(
+          style = "flex-grow: 1;",
+          shiny::selectInput(
+            ns("question"),
+            "CPIA Criterion:",
+            choices = format_question_choices(get_governance_questions()),
+            selected = "q12b"
+          )
+        ),
+        shiny::tags$div(
+          style = "margin-top: 25px;",
+          create_question_info_icon(ns)
+        )
       ),
       
       # Country selector

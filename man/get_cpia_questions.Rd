@@ -12,20 +12,19 @@ A tibble with columns:
 \item question_code: Question identifier (e.g., "q12a", "q12b")
 \item question_label: Full question text
 \item category: Always "Governance" for current questions
-\item subcategory: Question group (e.g., "Q12", "Q13", "Q14", "Q15", "Q16")
+\item subcategory: Question group (e.g., "Q12", "Q13", "Q15", "Q16")
 }
 }
 \description{
 Loads and formats CPIA question metadata from the cpiaetl package. This function
-reads the canonical cpia_defns.csv file which contains question codes, labels,
-and categorizations. Currently returns governance questions (Q12-Q16) with 13
-subquestions: q12a, q12b, q13a, q13b, q13c, q14a, q14b, q14c, q15a, q15b, q16a,
-q16b, q16c, q16d.
+uses the metadata_cpia dataset which contains question codes, labels, and data
+source information. Only returns questions that have actual data available in
+the CPIA datasets.
 }
 \examples{
 \dontrun{
 questions <- get_cpia_questions()
-# Returns 13 governance questions
+# Returns governance questions with available data
 governance <- questions[questions$category == "Governance", ]
 }
 

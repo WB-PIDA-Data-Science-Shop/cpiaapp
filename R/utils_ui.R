@@ -113,3 +113,146 @@ create_empty_table_message <- function(message = "No data available for the sele
     rownames = FALSE    # Don't show row numbers
   )
 }
+
+#' Create Question Info Icon with Modal
+#'
+#' Creates an info icon button that opens a modal dialog showing data sources and
+#' methodology for a CPIA question. Provides transparency about which publicly
+#' available datasets contribute to each question's estimated score.
+#'
+#' @param ns Namespace function from the calling module (e.g., NS(id))
+#' @param input_id ID for the action button (default: "question_info")
+#'
+#' @return A shiny UI element containing:
+#'   - Info icon button (ℹ️) with tooltip
+#'   - Styled with bootstrap info color
+#'   - No border, transparent background
+#'   
+#' @examples
+#' \dontrun{
+#' # In module UI
+#' ns <- NS("my_module")
+#' create_question_info_icon(ns)
+#' }
+#'
+#' @importFrom shiny actionButton icon modalDialog tags a h4 p hr modalButton
+#'
+#' @keywords internal
+create_question_info_icon <- function(ns, input_id = "question_info") {
+  shiny::actionButton(
+    ns(input_id),
+    label = NULL,
+    icon = shiny::icon("circle-info"),
+    class = "btn-info btn-sm",
+    style = "border: none; background: transparent; color: #0d6efd; padding: 0 5px;",
+    title = "View data sources and methodology"
+  )
+}
+
+#' Create Question Info Modal
+#'
+#' Creates a modal dialog displaying data sources and indicators for a selected
+#' CPIA question. Shows the actual indicators from cpiaetl::metadata_cpia that
+#' contribute to the question's score with their descriptions. Links to full 
+#' documentation on RPubs.
+#'
+#' @param question_code The question code (e.g., "q12a")
+#' @param question_label The full question label
+#' @param indicator_info Tibble with columns: indicator, var_description_short, source
+#' @param sources Character vector of data source names
+#' @param n_indicators Number of indicators
+#' @param documentation_url URL to full documentation (default: RPubs link)
+#'
+#' @return A shiny modal dialog UI element
+#'
+#' @examples
+#' \dontrun{
+#' # In module server
+#' observeEvent(input$question_info, {
+#'   sources <- get_question_data_sources()
+#'   info <- sources[sources$variable == input$question, ]
+#'   showModal(create_question_info_modal(
+#'     question_code = input$question,
+#'     question_label = "Property Rights",
+#'     indicator_info = info$indicator_info[[1]],
+#'     sources = info$sources[[1]],
+#'     n_indicators = info$n_indicators
+#'   ))
+#' })
+#' }
+#'
+#' @importFrom shiny modalDialog tags a h4 p hr
+#'
+#' @keywords internal
+create_question_info_modal <- function(
+    question_code,
+    question_label,
+    indicator_info,
+    sources,
+    n_indicators,
+    documentation_url = "https://rpubs.com/ifeanyi588/cpiascoringmethod") {
+  
+  shiny::modalDialog(
+    title = shiny::tags$div(
+      style = "font-size: 1.2em; font-weight: bold;",
+      paste0(toupper(question_code), " - ", question_label)
+    ),
+    
+    shiny::tags$div(
+      style = "margin-bottom: 1em;",
+      shiny::tags$span(
+        style = "background-color: #e7f3ff; padding: 4px 8px; border-radius: 4px; font-size: 0.9em;",
+        paste(n_indicators, "indicators from", length(sources), "data sources")
+      )
+    ),
+    
+    shiny::h4("Data Sources", style = "margin-top: 0;"),
+    shiny::tags$ul(
+      lapply(sources, function(source) {
+        shiny::tags$li(source)
+      })
+    ),
+    
+    shiny::h4("Indicators", style = "margin-top: 1.5em;"),
+    shiny::tags$div(
+      style = "max-height: 400px; overflow-y: auto;",
+      shiny::tags$table(
+        class = "table table-striped table-bordered",
+        style = "width: 100%; font-size: 0.9em;",
+        shiny::tags$thead(
+          shiny::tags$tr(
+            shiny::tags$th("Indicator", style = "width: 20%;"),
+            shiny::tags$th("Description", style = "width: 50%;"),
+            shiny::tags$th("Source", style = "width: 30%;")
+          )
+        ),
+        shiny::tags$tbody(
+          lapply(seq_len(nrow(indicator_info)), function(i) {
+            shiny::tags$tr(
+              shiny::tags$td(shiny::tags$code(indicator_info$indicator[i])),
+              shiny::tags$td(indicator_info$var_description_short[i]),
+              shiny::tags$td(indicator_info$source[i])
+            )
+          })
+        )
+      )
+    ),
+    
+    shiny::hr(),
+    
+    shiny::p(
+      style = "margin-bottom: 0;",
+      "For complete methodology and technical details, see: ",
+      shiny::a(
+        "CPIA Scoring Methodology Documentation",
+        href = documentation_url,
+        target = "_blank",
+        style = "font-weight: bold;"
+      )
+    ),
+    
+    size = "l",
+    easyClose = TRUE,
+    footer = shiny::modalButton("Close")
+  )
+}
