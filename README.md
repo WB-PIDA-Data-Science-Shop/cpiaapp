@@ -8,12 +8,13 @@ Interactive Shiny dashboard for visualizing World Bank Country Policy and Instit
 
 ## What Does This App Do?
 
-The CPIA Dashboard lets you explore 13 governance indicators across countries and time:
+The CPIA Dashboard lets you explore governance indicators across countries and time:
 - 📊 **Time-series plots** showing how governance scores change over years
 - 🌍 **Regional comparisons** to see how countries stack up against their neighbors
 - 💰 **Income group comparisons** to compare similar economies
 - 🔀 **Custom comparisons** with multiple countries side-by-side
 - 📋 **Interactive tables** with export capabilities (CSV, Excel, PDF)
+- 🤖 **AI-generated assessments** streamed token-by-token and downloadable as Word documents
 
 ## Quick Start
 
@@ -30,12 +31,14 @@ The app will open in your default browser at `http://127.0.0.1:XXXX`.
 
 ## Features
 
-✅ **13 governance questions** from CPIA Cluster D (q12a-q16d including q13c)  
-✅ **Dual datasets** - Standard CPIA and African Integrity Indicators  
+✅ **11 governance questions** from CPIA Cluster D (q12a–q16d, filtered to questions with available data)  
+✅ **Dual datasets** — Standard CPIA and African Integrity Indicators  
 ✅ **Interactive visualizations** powered by plotly (hover, zoom, pan)  
+✅ **Data source transparency** — ℹ icon beside each question shows which indicators and datasets underpin that score  
 ✅ **Modern UI** with bslib theming and automatic plot styling via thematic  
 ✅ **Robust validation** with clear error messages for data quality issues  
-✅ **134 passing tests** ensuring reliability and correctness  
+✅ **AI-generated assessments** — 150–300 word country narrative in WB CPIA style, streamed live and downloadable as .docx  
+✅ **192 passing tests** ensuring reliability and correctness  
 
 ## Package Architecture
 
@@ -44,20 +47,37 @@ The package follows a **modular helper function design** for maintainability:
 ```
 User Interface (viz_ui.R)
          ↓
-Orchestration (viz_server.R) - 132 lines
+Orchestration (viz_server.R)
          ↓
-Helper Functions (6 utility modules)
+Helper Functions (8 utility modules)
     ├── utils_metadata.R    → Question labels & formatting
     ├── utils_data.R        → Dataset validation
     ├── utils_data_prep.R   → Data preparation pipeline
     ├── utils_plot.R        → Plotting pipeline (ggplot2 → plotly)
     ├── utils_table.R       → Interactive tables (DT)
-    └── utils_ui.R          → Empty state components
+    ├── utils_ui.R          → Empty state & info modal components
+    ├── utils_report.R      → Prompt construction & Word export
+    └── utils_llm.R         → Provider-agnostic LLM interface
          ↓
-Data (cpiaetl package)
+Data (cpiaetl package)     LLM API (Groq / Ollama / WBG mAI)
 ```
 
 **Result:** Clean, testable code with 47% reduction in server complexity (280→132 lines).
+
+## AI Report Configuration
+
+The Generate Report feature requires an LLM provider configured via environment variables.
+Open your `.Renviron` with `usethis::edit_r_environ()` and add:
+
+```
+CPIA_LLM_BASE_URL=https://api.groq.com/openai/v1
+CPIA_LLM_MODEL=llama-3.3-70b-versatile
+CPIA_LLM_API_KEY=your_key_here
+```
+
+Get a free Groq API key at <https://console.groq.com>. Any OpenAI-compatible endpoint
+works — swap the env vars to use Ollama locally or WBG mAI in production. Restart R
+after editing `.Renviron`.
 
 ## Documentation
 
@@ -76,7 +96,7 @@ Data (cpiaetl package)
 
 ### Running Tests
 ```r
-devtools::test()          # Run all 134 tests
+devtools::test()          # Run all 192 tests
 devtools::check()         # Full R CMD check
 ```
 
@@ -118,9 +138,9 @@ See [Deployment Guide](../../wiki/Deployment) for troubleshooting.
 
 ## Project Status
 
-**Version:** 0.0.0.9000  
+**Version:** 0.1.0  
 **Status:** Production-ready ✅  
-**Tests:** 134 passing (0 failures)  
+**Tests:** 192 passing (0 failures)  
 **R CMD Check:** 0 errors, 0 warnings, 0 notes  
 
 ## Contributing

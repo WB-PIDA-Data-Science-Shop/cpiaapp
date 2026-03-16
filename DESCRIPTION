@@ -19,11 +19,16 @@ Imports:
     plotly,
     DT,
     tibble,
-    cpiaetl
+    cpiaetl,
+    ellmer,
+    officer,
+    httr2,
+    coro
 Suggests:
     testthat (>= 3.0.0),
     shinytest2,
-    chromote
+    chromote,
+    withr
 Config/testthat/edition: 3
 Remotes:
     WB-PIDA-Data-Science-Shop/cpiaetl

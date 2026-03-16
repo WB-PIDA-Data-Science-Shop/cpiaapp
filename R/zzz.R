@@ -17,5 +17,6 @@ utils::globalVariables(c(
   "comparator_category",
   "indicator",
   "var_description_short",
-  "variable"
+  "variable",
+  "group_type"
 ))
