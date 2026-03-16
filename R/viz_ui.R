@@ -99,6 +99,9 @@ viz_ui <- function(id) {
       bslib::card_body(
         DT::DTOutput(ns("score_table"))
       )
-    )
+    ),
+
+    # AI report panel — reads reactive state from this module
+    report_ui(ns("report"))
   )
 }

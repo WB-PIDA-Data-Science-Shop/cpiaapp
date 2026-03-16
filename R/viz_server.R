@@ -168,5 +168,22 @@ viz_server <- function(id,
         create_cpia_table(data)
       }
     })
+
+    # ── AI report module ────────────────────────────────────────────────────
+    # Derive question_label from the named choices vector each time the
+    # question changes — keeps label in sync without duplicating logic.
+    question_label <- shiny::reactive({
+      choices <- format_question_choices(get_governance_questions())
+      label   <- names(choices)[choices == input$question]
+      if (length(label) == 0L) input$question else label
+    })
+
+    report_server(
+      id             = "report",
+      country        = shiny::reactive(input$country),
+      question       = shiny::reactive(input$question),
+      question_label = question_label,
+      plot_data      = plot_data
+    )
   })
 }

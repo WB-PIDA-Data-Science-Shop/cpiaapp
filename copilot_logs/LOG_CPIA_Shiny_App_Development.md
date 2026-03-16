@@ -329,3 +329,119 @@ Decision to implement only validation aligns with immediate production needs - p
 - [ ] Add performance monitoring/logging in production
 - [ ] Consider extracting reusable components into separate package
 
+---
+
+## Update: 2026-03-16
+
+### Progress Summary
+
+**AI Report Generation Feature — Complete**
+
+Implemented end-to-end LLM-powered report generation integrated into the existing
+viz module. Users can click **Generate Report** to produce a 150–300 word country
+narrative in World Bank CPIA style, streamed token-by-token into the UI, and
+downloadable as a `.docx` file.
+
+**New files created:**
+
+- `R/utils_llm.R` — provider-agnostic LLM interface (`stream_llm_response()`,
+  `check_llm_available()`)
+- `R/utils_report.R` — prompt construction and Word export (`load_prompt_file()`,
+  `build_cpia_prompt()`, `build_trend_text()`, `format_report_docx()`)
+- `R/report_ui.R` — bslib card with Generate button, streaming output, download
+- `R/report_server.R` — state management, streaming, download handler
+- `R/report_module.R` — thin combiner wired into `viz_server.R`
+- `inst/prompts/cpia_report_prompt.md` — system prompt (editable without R)
+- `inst/prompts/cpia_style_examples.md` — 5 authentic WB CPIA passages as
+  few-shot style anchors
+
+**Files modified:**
+
+- `R/viz_ui.R` — added `report_ui(ns("report"))` below the DT card
+- `R/viz_server.R` — added `question_label` reactive + `report_server()` call
+- `DESCRIPTION` — added `ellmer`, `officer`, `httr2`, `coro` to Imports;
+  `withr` to Suggests
+- `README.md` — updated features list, architecture diagram, added LLM config
+  section, updated test count to 192
+
+**Tests:** `[ FAIL 0 | WARN 0 | SKIP 7 | PASS 192 ]`
+
+- 19 tests in `test-utils_report.R` — prompt construction, trend text, docx
+  export, edge cases (zero rows, single data point, no comparators)
+- 4 unit tests + 1 skipped integration test in `test-utils_llm.R`
+
+### Challenges Encountered
+
+1. **VDI GPU limitation** — local Ollama failed with CUDA error on NVIDIA A16-1B
+   (1024 MiB VRAM, compute mode Prohibited by Citrix hypervisor). Resolved by
+   switching to Groq cloud API (free tier, `llama-3.3-70b-versatile`).
+
+2. **Groq `service_tier` rejection** — `ellmer::chat_openai()` unconditionally
+   sends `service_tier: auto`, which Groq free tier rejects with HTTP 400.
+   Resolved with URL-pattern detection routing to `ellmer::chat_groq()` for
+   Groq endpoints and `ellmer::chat_openai_compatible()` for all others.
+
+3. **ellmer 0.4.0 deprecation** — `api_key =` argument deprecated; resolved by
+   switching to `credentials = function() api_key` pattern throughout.
+
+4. **`coro::loop` syntax** — correct pattern is `coro::loop(for (token in gen)
+   { ... })`. A plain `for (token in gen)` outside `coro::loop()` raises
+   "invalid for() loop sequence". A bare `coro::loop({ coro::yield(...) })` is
+   also wrong — `coro::loop()` takes a `for` expression as its argument.
+
+5. **`max()` on empty vector** — `build_trend_text()` raised a warning when
+   called with zero-row data. Resolved with `length(all_years) > 0L` guard
+   before calling `max()`.
+
+### Changes to Plan
+
+- Used `ellmer::chat_groq()` + `ellmer::chat_openai_compatible()` instead of
+  `ellmer::chat_openai()` to avoid provider-specific field rejections
+- Prompt files placed in `inst/prompts/` (not `.prompts/`) so they are
+  accessible via `system.file()` after package installation
+- `coro` added to `Imports` explicitly despite being an ellmer dependency —
+  `coro::loop()` is called directly in `utils_llm.R`
+
+### Next Steps
+
+- [ ] Deploy to Posit Connect; set `CPIA_LLM_*` env vars in Connect dashboard
+- [ ] Obtain WBG mAI endpoint and API key; test as production LLM provider
+- [ ] Run `renv::snapshot()` to lock new dependencies (ellmer, officer, coro)
+- [ ] Gather user feedback on report quality; refine `inst/prompts/` as needed
+- [ ] Extend to multi-turn chatbot using same ellmer infrastructure
+
+---
+
+## To Do List
+
+### Deployment
+- [ ] Deploy to Posit Connect and set `CPIA_LLM_BASE_URL`, `CPIA_LLM_MODEL`,
+  `CPIA_LLM_API_KEY` in Connect environment panel
+- [ ] Obtain WBG mAI endpoint credentials; test as alternative LLM provider
+- [ ] Run `renv::snapshot()` after new package additions
+
+### AI Report Quality
+- [ ] Gather user feedback on generated report quality
+- [ ] Refine system prompt in `inst/prompts/cpia_report_prompt.md` based on
+  feedback (no R changes required)
+- [ ] Review whether system prompt size approaches Groq's context limits for
+  large comparator sets
+
+### Testing & Validation
+- [ ] Add integration test with `CPIA_RUN_LLM_TESTS=true` against live Groq API
+- [ ] Test info modal with questions that have many indicators (e.g., q16d)
+- [ ] Verify validation error messages are user-friendly in production
+
+### Future AI Features
+- [ ] Multi-turn chatbot panel using ellmer multi-turn chat support
+- [ ] Batch report generation across countries or criteria
+- [ ] Structured LLM output (JSON schema) for richer report sections
+
+### Code Quality
+- [ ] Add comment in `get_cpia_questions()` explaining q13a/q13c exclusion
+- [ ] Consider extracting question availability check into a reusable helper
+
+### Optional/Future
+- [ ] Enable shinytest2 integration tests on non-restricted environments
+- [ ] Add performance monitoring/logging in production
+
